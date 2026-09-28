@@ -4,8 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.8"
 uuid = { version = "1.26.1", features = ["v4","serde"] }
 chrono = "0.4.45"
 rust_decimal = "1.43.0"
 sqlx = { version = "0.9.0", features = ["postgres", "runtime-tokio", "uuid", "chrono", "rust_decimal"] }
 serde = { version = "1.0.229", features = ["derive"] }
+dotenvy = "0.15.7"
+thiserror = "2.0.20"
+tokio = { version = "1.53.0", features = ["macros", "net", "rt-multi-thread"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }

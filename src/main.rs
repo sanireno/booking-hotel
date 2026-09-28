@@ -27,6 +27,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&config.database_url)
         .await?;
 
+    sqlx::migrate!().run(&pool).await?;
+    info!("database migrations applied");
+
     let listener = TcpListener::bind(address).await?;
     info!(%address, "server started");
 

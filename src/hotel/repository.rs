@@ -62,3 +62,17 @@ pub async fn update_hotel(pool:&PgPool,id:Uuid,hotel:UpdateHotel)->Result<Hotel,
         .fetch_one(pool)
         .await
 }
+pub async fn get_all_hotels(pool:&PgPool,limit:i64,offset:i64)->Result<Vec<Hotel>,sqlx::Error>{
+    sqlx::query_as::<_,Hotel>(
+        r#"
+            SELECT id,name,description,city,address,created_at
+            FROM hotels
+            ORDER BY id
+            LIMIT $1 OFFSET $2
+            "#,
+    )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+}

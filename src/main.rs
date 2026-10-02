@@ -7,6 +7,9 @@ pub mod pricing;
 pub mod rooms;
 pub mod users;
 
+#[cfg(test)]
+mod repository_tests;
+
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use config::Config;
 use serde::Serialize;

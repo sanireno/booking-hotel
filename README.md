@@ -119,6 +119,62 @@ Tests exercise these routes against isolated PostgreSQL databases, including
 password hashing, validation, duplicate emails, forged/expired JWTs, claim
 validation, deleted users, role changes and the shared health endpoint.
 
+## Hotel API
+
+The hotel module now includes HTTP DTOs, handlers and a service over the existing
+repository. Persistence models and `CreateHotel`/`UpdateHotel` inputs remain
+internal; API requests and responses are defined separately in `hotel/dto.rs`.
+
+| Method | Path | Access | Result |
+| --- | --- | --- | --- |
+| GET | `/hotels?limit=20&offset=0` | Public | `200`, an array of hotels |
+| GET | `/hotels/{id}` | Public | `200`, one hotel |
+| POST | `/hotels` | Admin | `201`, created hotel and `Location` header |
+| PUT | `/hotels/{id}` | Admin | `200`, updated hotel |
+| DELETE | `/hotels/{id}` | Admin | `204`, empty body |
+
+Create and update body:
+
+```json
+{
+  "name": "Test Hotel",
+  "description": "Hotel description",
+  "city": "Irkutsk",
+  "address": "Street 1"
+}
+```
+
+Required text fields are trimmed and validated in the service: `name` accepts
+1 to 200 characters, `city` 1 to 100, and `address` 1 to 500. Control characters
+are rejected. `description` is optional, trimmed and accepts up to 5000 characters;
+line breaks and tabs are allowed, unsupported control characters are rejected.
+An empty/blank description is stored as `NULL`. Unknown request fields, including
+`id` and `created_at`, are rejected. Request bodies are limited to 32 KiB.
+
+`PUT` replaces every editable field. `name`, `city` and `address` are always
+required; an omitted or `null` description clears the previous value.
+IDs and creation timestamps remain unchanged. Responses include `id`, `name`,
+`description`, `city`, `address` and `created_at`.
+
+Lists are ordered by ID. Pagination defaults to `limit=20`, `offset=0`, accepts
+`limit` from 1 to 100 and a non-negative `offset`; an empty page is `[]`.
+Malformed query parameters or UUIDs return `400`, invalid field values return
+`422`, and missing hotels return `404`, using the shared JSON error shape.
+
+Writes require a Bearer token and the current database role `admin`. `customer`
+and `manager` receive `403`; missing/invalid tokens receive `401`. Manager-to-hotel
+ownership is not present in the current schema, so managers do not have write access.
+Public registration creates customers; admin roles must be assigned through trusted
+administration, not through registration request fields.
+
+Deleting a hotel referenced by bookings returns `409` with
+`Hotel has bookings and cannot be deleted`. The database rolls back the entire
+delete, preserving rooms and tariffs. An unreferenced hotel is deleted with the
+existing cascade behavior for its room types, rooms and price plans.
+
+Hotel HTTP tests cover CRUD, public reads, bounded pagination, nullable descriptions,
+input errors, admin authorization and atomic deletion conflicts in isolated databases.
+
 ## Database schema
 
 The initial migration creates the following tables:

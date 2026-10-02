@@ -55,6 +55,31 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
+impl From<axum::extract::rejection::JsonRejection> for AppError {
+    fn from(error: axum::extract::rejection::JsonRejection) -> Self {
+        match error.status() {
+            StatusCode::PAYLOAD_TOO_LARGE => AppError::PayloadTooLarge,
+            StatusCode::UNSUPPORTED_MEDIA_TYPE => AppError::UnsupportedMediaType,
+            StatusCode::UNPROCESSABLE_ENTITY => {
+                AppError::Validation("Invalid request fields".into())
+            }
+            _ => AppError::BadRequest("Expected a valid JSON body".into()),
+        }
+    }
+}
+
+impl From<axum::extract::rejection::PathRejection> for AppError {
+    fn from(_: axum::extract::rejection::PathRejection) -> Self {
+        AppError::BadRequest("Invalid resource identifier".into())
+    }
+}
+
+impl From<axum::extract::rejection::QueryRejection> for AppError {
+    fn from(_: axum::extract::rejection::QueryRejection) -> Self {
+        AppError::BadRequest("Invalid query parameters".into())
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {

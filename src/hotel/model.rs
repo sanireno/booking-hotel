@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Hotel {
     pub id: Uuid,
 
@@ -14,7 +13,7 @@ pub struct Hotel {
 
     pub created_at: DateTime<Utc>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct CreateHotel {
     pub name: String,
     pub description: Option<String>,
@@ -22,7 +21,7 @@ pub struct CreateHotel {
     pub address: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct UpdateHotel {
     pub name: String,
     pub description: Option<String>,

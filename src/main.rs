@@ -49,6 +49,7 @@ fn app(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .nest("/auth", auth::routes())
+        .merge(hotel::routes())
         .with_state(state)
 }
 

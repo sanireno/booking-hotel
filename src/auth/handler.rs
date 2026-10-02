@@ -21,7 +21,7 @@ pub async fn register(
     State(state): State<AppState>,
     payload: Result<Json<RegisterRequest>, JsonRejection>,
 ) -> Result<Response, AppError> {
-    let Json(request) = payload.map_err(json_error)?;
+    let Json(request) = payload?;
     let response = service::register(&state, request).await?;
     Ok((
         StatusCode::CREATED,
@@ -35,7 +35,7 @@ pub async fn login(
     State(state): State<AppState>,
     payload: Result<Json<LoginRequest>, JsonRejection>,
 ) -> Result<Response, AppError> {
-    let Json(request) = payload.map_err(json_error)?;
+    let Json(request) = payload?;
     let response = service::login(&state, request).await?;
     Ok((
         [(CACHE_CONTROL, "no-store"), (PRAGMA, "no-cache")],
@@ -46,13 +46,4 @@ pub async fn login(
 
 pub async fn me(AuthUser(user): AuthUser) -> Response {
     ([(CACHE_CONTROL, "no-store")], Json(user)).into_response()
-}
-
-fn json_error(error: JsonRejection) -> AppError {
-    match error.status() {
-        StatusCode::PAYLOAD_TOO_LARGE => AppError::PayloadTooLarge,
-        StatusCode::UNSUPPORTED_MEDIA_TYPE => AppError::UnsupportedMediaType,
-        StatusCode::UNPROCESSABLE_ENTITY => AppError::Validation("Invalid request fields".into()),
-        _ => AppError::BadRequest("Expected a valid JSON body".into()),
-    }
 }

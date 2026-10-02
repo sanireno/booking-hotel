@@ -1,4 +1,5 @@
 pub mod app_error;
+pub mod app_state;
 pub mod auth;
 pub mod bookings;
 pub mod config;
@@ -10,10 +11,11 @@ pub mod users;
 #[cfg(test)]
 mod repository_tests;
 
+use app_state::AppState;
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use config::Config;
 use serde::Serialize;
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
@@ -33,16 +35,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sqlx::migrate!().run(&pool).await?;
     info!("database migrations applied");
 
+    let state = AppState::new(pool, &config.auth).await?;
+
     let listener = TcpListener::bind(address).await?;
     info!(%address, "server started");
 
-    axum::serve(listener, app(pool)).await?;
+    axum::serve(listener, app(state)).await?;
 
     Ok(())
 }
 
-fn app(pool: PgPool) -> Router {
-    Router::new().route("/health", get(health)).with_state(pool)
+fn app(state: AppState) -> Router {
+    Router::new()
+        .route("/health", get(health))
+        .nest("/auth", auth::routes())
+        .with_state(state)
 }
 
 fn init_tracing() {
@@ -57,8 +64,8 @@ struct HealthResponse {
     database: &'static str,
 }
 
-async fn health(State(pool): State<PgPool>) -> (StatusCode, Json<HealthResponse>) {
-    match sqlx::query("SELECT 1").execute(&pool).await {
+async fn health(State(state): State<AppState>) -> (StatusCode, Json<HealthResponse>) {
+    match sqlx::query("SELECT 1").execute(&state.pool).await {
         Ok(_) => (
             StatusCode::OK,
             Json(HealthResponse {

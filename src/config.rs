@@ -5,17 +5,45 @@ use thiserror::Error;
 const DEFAULT_APP_HOST: &str = "127.0.0.1";
 const DEFAULT_APP_PORT: u16 = 3000;
 const DEFAULT_DATABASE_MAX_CONNECTIONS: u32 = 5;
+const DEFAULT_JWT_TTL_SECONDS: u64 = 3600;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Config {
     pub app_host: String,
     pub app_port: u16,
     pub database_url: String,
     pub database_max_connections: u32,
+    pub auth: AuthConfig,
+}
+
+#[derive(Clone)]
+pub struct AuthConfig {
+    pub jwt_secret: String,
+    pub jwt_ttl_seconds: u64,
+}
+
+impl AuthConfig {
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.jwt_secret.len() < 32 || self.jwt_secret.trim().is_empty() {
+            return Err(ConfigError::InvalidVariable(
+                "JWT_SECRET (at least 32 bytes)",
+            ));
+        }
+        if !(1..=86400).contains(&self.jwt_ttl_seconds) {
+            return Err(ConfigError::InvalidVariable("JWT_TTL_SECONDS (1..=86400)"));
+        }
+        Ok(())
+    }
 }
 
 impl Config {
     pub fn from_env() -> Result<Self, ConfigError> {
+        let auth = AuthConfig {
+            jwt_secret: env::var("JWT_SECRET")
+                .map_err(|_| ConfigError::MissingVariable("JWT_SECRET"))?,
+            jwt_ttl_seconds: parse_optional("JWT_TTL_SECONDS", DEFAULT_JWT_TTL_SECONDS)?,
+        };
+        auth.validate()?;
         Ok(Self {
             app_host: env::var("APP_HOST").unwrap_or_else(|_| DEFAULT_APP_HOST.to_owned()),
             app_port: parse_optional("APP_PORT", DEFAULT_APP_PORT)?,
@@ -25,6 +53,7 @@ impl Config {
                 "DATABASE_MAX_CONNECTIONS",
                 DEFAULT_DATABASE_MAX_CONNECTIONS,
             )?,
+            auth,
         })
     }
 

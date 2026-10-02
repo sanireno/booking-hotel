@@ -3,15 +3,27 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum AppError {
+    #[error("{0}")]
     BadRequest(String),
+    #[error("Request body is too large")]
+    PayloadTooLarge,
+    #[error("Expected application/json")]
+    UnsupportedMediaType,
+    #[error("Internal server error")]
     InternalServerError,
+    #[error("Not found")]
     NotFound,
+    #[error("Conflict")]
     Conflict,
+    #[error("{0}")]
     ConflictMessage(String),
+    #[error("{0}")]
     Validation(String),
+    #[error("Unauthorized")]
     Unauthorized,
+    #[error("Forbidden")]
     Forbidden,
 }
 
@@ -47,6 +59,14 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             AppError::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
+            AppError::PayloadTooLarge => (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "Request body is too large".into(),
+            ),
+            AppError::UnsupportedMediaType => (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                "Expected application/json".into(),
+            ),
             AppError::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),
@@ -61,6 +81,13 @@ impl IntoResponse for AppError {
         let body = Json(json!({
             "error": message
         }));
-        (status, body).into_response()
+        let mut response = (status, body).into_response();
+        if status == StatusCode::UNAUTHORIZED {
+            response.headers_mut().insert(
+                axum::http::header::WWW_AUTHENTICATE,
+                axum::http::HeaderValue::from_static("Bearer"),
+            );
+        }
+        response
     }
 }

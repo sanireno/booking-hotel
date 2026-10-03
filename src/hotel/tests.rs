@@ -91,7 +91,7 @@ async fn request(
 async fn hotel_crud_and_full_updates(pool: PgPool) -> Result<(), AppError> {
     let state = state(pool).await?;
     let (_, admin) = actor(&state, UserRole::Admin).await?;
-    let app = crate::app(state);
+    let app = crate::app(state, &crate::config::CorsConfig::default());
     let (status, _, empty) = request(&app, Method::GET, "/hotels", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(empty, json!([]));
@@ -157,7 +157,7 @@ async fn hotel_list_is_public_and_pagination_is_bounded(pool: PgPool) -> Result<
         )
         .await?;
     }
-    let app = crate::app(state);
+    let app = crate::app(state, &crate::config::CorsConfig::default());
     let (status, _, default_page) = request(&app, Method::GET, "/hotels", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(default_page.as_array().unwrap().len(), 20);
@@ -213,7 +213,7 @@ async fn hotel_writes_require_the_current_admin_role(pool: PgPool) -> Result<(),
     )
     .await?;
     let path = format!("/hotels/{}", hotel.id);
-    let app = crate::app(state.clone());
+    let app = crate::app(state.clone(), &crate::config::CorsConfig::default());
     for token in [None, Some("Bearer invalid")] {
         for method in [Method::POST, Method::PUT, Method::DELETE] {
             let endpoint = if method == Method::POST {
@@ -281,7 +281,7 @@ async fn hotel_writes_require_the_current_admin_role(pool: PgPool) -> Result<(),
 async fn hotel_payload_validation_and_http_errors(pool: PgPool) -> Result<(), AppError> {
     let state = state(pool).await?;
     let (_, admin) = actor(&state, UserRole::Admin).await?;
-    let app = crate::app(state.clone());
+    let app = crate::app(state.clone(), &crate::config::CorsConfig::default());
     let created = request(&app, Method::POST, "/hotels", Some(payload()), Some(&admin))
         .await
         .2;
@@ -387,7 +387,7 @@ async fn hotel_with_bookings_cannot_be_deleted(pool: PgPool) -> Result<(), AppEr
     };
     let state = state(pool).await?;
     let (admin_user, admin) = actor(&state, UserRole::Admin).await?;
-    let app = crate::app(state.clone());
+    let app = crate::app(state.clone(), &crate::config::CorsConfig::default());
     let created = request(&app, Method::POST, "/hotels", Some(payload()), Some(&admin))
         .await
         .2;

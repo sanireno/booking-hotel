@@ -90,7 +90,7 @@ async fn request(
 #[sqlx::test(migrations = "./migrations")]
 async fn register_login_and_me(pool: PgPool) -> Result<(), AppError> {
     let state = state(pool).await?;
-    let app = crate::app(state.clone());
+    let app = crate::app(state.clone(), &crate::config::CorsConfig::default());
     let (status, headers, registered) = request(
         &app,
         Method::POST,
@@ -178,7 +178,7 @@ async fn register_login_and_me(pool: PgPool) -> Result<(), AppError> {
 async fn wrong_password_and_unknown_user_have_same_response(pool: PgPool) -> Result<(), AppError> {
     let state = state(pool).await?;
     register_user(&state).await?;
-    let app = crate::app(state);
+    let app = crate::app(state, &crate::config::CorsConfig::default());
     let mut errors = Vec::new();
     for (email, password) in [
         ("customer@example.com", "wrong-password"),
@@ -206,7 +206,7 @@ async fn wrong_password_and_unknown_user_have_same_response(pool: PgPool) -> Res
 #[sqlx::test(migrations = "./migrations")]
 async fn invalid_registration_and_json_are_rejected(pool: PgPool) -> Result<(), AppError> {
     let state = state(pool).await?;
-    let app = crate::app(state.clone());
+    let app = crate::app(state.clone(), &crate::config::CorsConfig::default());
     let mut invalid = Vec::new();
     for (field, value) in [
         ("email", json!("invalid-email")),
@@ -278,7 +278,7 @@ async fn extractor_rejects_invalid_tokens_and_headers(pool: PgPool) -> Result<()
     let state = state(pool).await?;
     let registered = register_user(&state).await?;
     let claims = state.tokens.verify(&registered.access_token)?;
-    let app = crate::app(state);
+    let app = crate::app(state, &crate::config::CorsConfig::default());
     for header in [
         None,
         Some("Basic abc"),

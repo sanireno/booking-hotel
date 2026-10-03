@@ -28,6 +28,41 @@ Expected response:
 {"status":"ok","database":"up"}
 ```
 
+## Frontend CORS
+
+The API permits browser requests from these origins by default:
+`http://localhost:5173` and `http://127.0.0.1:5173`.
+Configure the comma-separated allowlist in `.env` and restart the API:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://portfolio.example.com
+```
+
+Each origin consists of a scheme, host and optional port, without an application
+path, query or fragment. Wildcards are not accepted. An explicitly empty value
+disables cross-origin access. Requests without `Origin`, including CLI clients,
+continue to work normally.
+
+CORS handles `OPTIONS` preflight before authentication and permits `GET`, `HEAD`,
+`POST`, `PUT`, `DELETE` and `OPTIONS`, with `Authorization` and `Content-Type`
+request headers. The frontend can read the `Location` and `WWW-Authenticate`
+response headers. Preflight responses can be cached for 600 seconds. Cookie
+credentials are not enabled; protected requests use `Authorization: Bearer ...`.
+
+Check the preflight response:
+
+```bash
+curl -i -X OPTIONS http://127.0.0.1:3000/hotels \
+  -H 'Origin: http://localhost:5173' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: authorization,content-type'
+```
+
+Allowed origins receive `Access-Control-Allow-Origin`, including on API errors.
+Other origins receive no such header, so browsers cannot expose the response to
+their JavaScript. CORS is a browser policy, not a replacement for JWT validation
+or admin authorization.
+
 ## Authentication
 
 Authentication is implemented in `src/auth`: HTTP DTOs, handlers, services,

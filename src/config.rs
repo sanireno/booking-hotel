@@ -1,11 +1,14 @@
 use std::{env, net::SocketAddr};
 
+use axum::http::HeaderValue;
 use thiserror::Error;
+use url::Url;
 
 const DEFAULT_APP_HOST: &str = "127.0.0.1";
 const DEFAULT_APP_PORT: u16 = 3000;
 const DEFAULT_DATABASE_MAX_CONNECTIONS: u32 = 5;
 const DEFAULT_JWT_TTL_SECONDS: u64 = 3600;
+const DEFAULT_CORS_ALLOWED_ORIGINS: &str = "http://localhost:5173,http://127.0.0.1:5173";
 
 #[derive(Clone)]
 pub struct Config {
@@ -14,6 +17,52 @@ pub struct Config {
     pub database_url: String,
     pub database_max_connections: u32,
     pub auth: AuthConfig,
+    pub cors: CorsConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct CorsConfig {
+    pub allowed_origins: Vec<HeaderValue>,
+}
+
+impl CorsConfig {
+    pub fn from_origins(value: &str) -> Result<Self, ConfigError> {
+        let mut allowed_origins = Vec::new();
+        if !value.trim().is_empty() {
+            for origin in value.split(',') {
+                let origin = origin.trim();
+                if origin
+                    .chars()
+                    .any(|character| character.is_whitespace() || character.is_control())
+                {
+                    return Err(ConfigError::InvalidVariable("CORS_ALLOWED_ORIGINS"));
+                }
+                let url = Url::parse(origin)
+                    .map_err(|_| ConfigError::InvalidVariable("CORS_ALLOWED_ORIGINS"))?;
+                if !matches!(url.scheme(), "http" | "https")
+                    || !url.username().is_empty()
+                    || url.password().is_some()
+                    || url.path() != "/"
+                    || url.query().is_some()
+                    || url.fragment().is_some()
+                {
+                    return Err(ConfigError::InvalidVariable("CORS_ALLOWED_ORIGINS"));
+                }
+                let origin = HeaderValue::from_str(&url.origin().ascii_serialization())
+                    .map_err(|_| ConfigError::InvalidVariable("CORS_ALLOWED_ORIGINS"))?;
+                if !allowed_origins.contains(&origin) {
+                    allowed_origins.push(origin);
+                }
+            }
+        }
+        Ok(Self { allowed_origins })
+    }
+}
+
+impl Default for CorsConfig {
+    fn default() -> Self {
+        Self::from_origins(DEFAULT_CORS_ALLOWED_ORIGINS).expect("default CORS origins are valid")
+    }
 }
 
 #[derive(Clone)]
@@ -54,6 +103,10 @@ impl Config {
                 DEFAULT_DATABASE_MAX_CONNECTIONS,
             )?,
             auth,
+            cors: CorsConfig::from_origins(
+                &env::var("CORS_ALLOWED_ORIGINS")
+                    .unwrap_or_else(|_| DEFAULT_CORS_ALLOWED_ORIGINS.into()),
+            )?,
         })
     }
 

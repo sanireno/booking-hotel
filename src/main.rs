@@ -3,6 +3,7 @@ pub mod app_state;
 pub mod auth;
 pub mod bookings;
 pub mod config;
+pub mod cors;
 pub mod hotel;
 pub mod pricing;
 pub mod rooms;
@@ -13,7 +14,7 @@ mod repository_tests;
 
 use app_state::AppState;
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
-use config::Config;
+use config::{Config, CorsConfig};
 use serde::Serialize;
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
@@ -40,17 +41,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(address).await?;
     info!(%address, "server started");
 
-    axum::serve(listener, app(state)).await?;
+    axum::serve(listener, app(state, &config.cors)).await?;
 
     Ok(())
 }
 
-fn app(state: AppState) -> Router {
+fn app(state: AppState, cors_config: &CorsConfig) -> Router {
     Router::new()
         .route("/health", get(health))
         .nest("/auth", auth::routes())
         .merge(hotel::routes())
         .with_state(state)
+        .layer(cors::layer(cors_config))
 }
 
 fn init_tracing() {

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfcf8">
+  <meta name="description" content="Место — небольшая коллекция отелей для большого отдыха.">
+  <title>Место — отели с характером</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/lucide.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <a href="#" class="brand" aria-label="Место, главная"><i data-lucide="asterisk"></i>место<span class="brand-dot">.</span></a>
+    <nav aria-label="Основная навигация">
+      <a href="#catalog" class="nav-catalog">Отели</a>
+      <button id="nav-favorites" class="nav-favorites" type="button"><i data-lucide="heart"></i><span>Избранное</span><span id="favorites-count" class="count">0</span></button>
+    </nav>
+    <button id="account-button" class="account-button" type="button"><i data-lucide="user-round"></i><span>Войти</span></button>
+  </header>
+
+  <main id="catalog-page">
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-image" src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=2000&q=85" alt="Гостиничный номер с большой кроватью и окнами в зеленый сад" fetchpriority="high">
+      <div class="hero-shade"></div>
+      <div class="hero-content">
+        <p class="eyebrow"><span></span> Небольшая коллекция. Большой отдых.</p>
+        <h1 id="hero-title">Место<span>.</span></h1>
+        <p class="hero-copy">Где хочется остаться<br>чуть дольше.</p>
+        <a href="#catalog" class="hero-link">Найти свое место <i data-lucide="arrow-up-right"></i></a>
+      </div>
+      <div class="hero-caption"><i data-lucide="sun"></i><span>Время замедлиться</span></div>
+      <span class="hero-index">Отели с характером</span>
+    </section>
+
+    <section class="search-band" aria-label="Поиск отелей">
+      <form id="search-form" class="search-form">
+        <label class="search-field"><i data-lucide="map-pin"></i><span><span class="field-label">Куда отправимся?</span><input id="search-input" type="search" placeholder="Город или название отеля" autocomplete="off" maxlength="200"></span></label>
+        <label class="sort-field"><span class="field-label">Порядок</span><select id="sort-select" aria-label="Порядок отелей"><option value="recommended">Наша подборка</option><option value="name">По названию</option><option value="city">По городу</option></select></label>
+        <button class="button button-dark" type="submit"><i data-lucide="search"></i>Найти место</button>
+      </form>
+    </section>
+
+    <section id="catalog" class="catalog section-width" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <div><p class="eyebrow text-muted" id="collection-label">Коллекция мест</p><h2 id="catalog-title">Отдых начинается здесь</h2></div>
+        <div class="catalog-actions"><span id="result-count" class="text-muted" aria-live="polite"></span><button id="add-hotel" class="button button-small button-dark" hidden><i data-lucide="plus"></i>Добавить отель</button></div>
+      </div>
+      <div class="catalog-toolbar">
+        <div class="city-filters" id="city-filters" aria-label="Города"></div>
+        <button id="favorites-filter" class="icon-button" title="Только избранное" aria-label="Только избранное" aria-pressed="false"><i data-lucide="heart"></i></button>
+      </div>
+      <div id="catalog-status" class="catalog-status" aria-live="polite"></div>
+      <div id="hotel-grid" class="hotel-grid" aria-busy="true"></div>
+      <div class="load-more-wrap"><button id="load-more" class="button button-outline" hidden>Показать еще <i data-lucide="arrow-down"></i></button></div>
+      <div class="collection-note"><i data-lucide="sparkles"></i><p>Не просто адрес на карте.<br><strong>Место, которое становится частью вашей истории.</strong></p><span class="note-number">М / 01</span></div>
+    </section>
+  </main>
+
+  <main id="detail-page" class="detail-page" hidden></main>
+
+  <footer class="footer section-width"><a href="#" class="brand brand-footer">место.</a><p>Хорошие места. Ваши истории.</p><span>© <span id="year"></span> Место</span></footer>
+
+  <dialog id="auth-dialog" class="dialog auth-dialog" aria-labelledby="auth-title">
+    <button class="icon-button dialog-close" type="button" data-close="auth-dialog" title="Закрыть" aria-label="Закрыть"><i data-lucide="x"></i></button>
+    <div class="dialog-brand"><i data-lucide="asterisk"></i></div>
+    <p class="eyebrow text-muted">Рады вас видеть</p><h2 id="auth-title">С возвращением.</h2>
+    <div id="auth-tabs" class="segmented" role="group" aria-label="Вход или регистрация"><button type="button" data-auth-mode="login" aria-pressed="true">Вход</button><button type="button" data-auth-mode="register" aria-pressed="false">Регистрация</button></div>
+    <form id="auth-form">
+      <div id="registration-fields" class="two-fields" hidden>
+        <label>Имя<input name="first_name" autocomplete="given-name" maxlength="100"></label>
+        <label>Фамилия<input name="last_name" autocomplete="family-name" maxlength="100"></label>
+      </div>
+      <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required maxlength="254"></label>
+      <label>Пароль<span class="password-field"><input name="password" type="password" autocomplete="current-password" required maxlength="256"><button id="password-toggle" class="icon-button" type="button" title="Показать пароль" aria-label="Показать пароль"><i data-lucide="eye"></i></button></span></label>
+      <p id="password-note" class="form-note" hidden>От 12 до 128 символов</p>
+      <p id="auth-error" class="form-error" role="alert"></p>
+      <button id="auth-submit" class="button button-dark full-width" type="submit">Войти <i data-lucide="arrow-right"></i></button>
+    </form>
+  </dialog>
+
+  <dialog id="account-dialog" class="dialog" aria-labelledby="account-title">
+    <button class="icon-button dialog-close" type="button" data-close="account-dialog" title="Закрыть" aria-label="Закрыть"><i data-lucide="x"></i></button>
+    <p class="eyebrow text-muted">Ваш профиль</p><h2 id="account-title"></h2>
+    <dl id="account-info" class="account-info"></dl>
+    <button id="logout-button" class="button button-outline full-width" type="button"><i data-lucide="log-out"></i>Выйти</button>
+  </dialog>
+
+  <dialog id="hotel-dialog" class="dialog hotel-dialog" aria-labelledby="hotel-form-title">
+    <button class="icon-button dialog-close" type="button" data-close="hotel-dialog" title="Закрыть" aria-label="Закрыть"><i data-lucide="x"></i></button>
+    <p class="eyebrow text-muted">Управление коллекцией</p><h2 id="hotel-form-title">Новый отель</h2>
+    <form id="hotel-form">
+      <label>Название<input name="name" required maxlength="200"></label>
+      <label>Город<input name="city" required maxlength="100"></label>
+      <label>Адрес<input name="address" required maxlength="500"></label>
+      <label>Описание<textarea name="description" rows="4" maxlength="5000"></textarea></label>
+      <p id="hotel-error" class="form-error" role="alert"></p>
+      <button class="button button-dark full-width" type="submit">Сохранить <i data-lucide="check"></i></button>
+    </form>
+  </dialog>
+
+  <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-title">
+    <button class="icon-button dialog-close" type="button" data-close="delete-dialog" title="Закрыть" aria-label="Закрыть"><i data-lucide="x"></i></button>
+    <p class="eyebrow text-muted">Управление коллекцией</p><h2 id="delete-title">Удалить отель?</h2>
+    <p id="delete-name" class="delete-name"></p><p id="delete-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button class="button button-outline" data-close="delete-dialog">Отмена</button><button id="confirm-delete" class="button button-danger">Удалить <i data-lucide="trash-2"></i></button></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

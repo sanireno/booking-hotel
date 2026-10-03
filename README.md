@@ -28,6 +28,38 @@ Expected response:
 {"status":"ok","database":"up"}
 ```
 
+## Frontend
+
+`frontend/` contains a two-view Russian hotel catalogue written in plain HTML,
+CSS and JavaScript, without a build step. Run the backend as above, then start
+the static frontend server with Node.js 20+:
+
+```bash
+node frontend/server.mjs
+```
+
+Open `http://127.0.0.1:5173`. The frontend calls the API at
+`http://127.0.0.1:3000`. For another API address, define
+`window.BOOKING_API_URL` before loading `app.js` in `index.html` and update the
+backend CORS allowlist to match the frontend origin. `FRONTEND_PORT` changes the
+static server port; it defaults to `5173`.
+
+Run the dependency-free frontend API client tests with
+`node --test frontend/tests/*.test.js`.
+
+The UI includes city/name search, sorting, local favorites, hotel details,
+registration, login and a profile. Admin accounts can create, edit and delete
+real hotels. Access tokens are stored in `sessionStorage`; favorites use
+`localStorage`. Logout clears the browser token, not the server-side JWT.
+
+If the API responds with an empty hotel list, an explicitly labeled fictional
+demo collection is displayed. Real records replace that collection, not merge
+with it. API failures show an error and retry action rather than a demo fallback.
+Images are illustrative: the current hotel API does not contain photo fields.
+Room availability, pricing and booking are not simulated. Photos and fonts are
+loaded from Unsplash and Google Fonts; Lucide icons are vendored at version
+`0.468.0` under the ISC license.
+
 ## Frontend CORS
 
 The API permits browser requests from these origins by default:
